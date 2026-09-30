@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Career Island</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="labels"></div>
+
+  <!-- Entry gate: nothing personal is on this page until data.enc is decrypted. -->
+  <section id="gate" class="screen">
+    <div class="card gate-card">
+      <div class="gate-emoji">🏝️</div>
+      <h1>Career Island</h1>
+      <p class="muted">A tiny 3D adventure. Enter your code to set sail.</p>
+      <form id="gate-form" autocomplete="off">
+        <input id="gate-input" type="password" placeholder="Entry code" aria-label="Entry code" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <button id="gate-btn" type="submit" class="btn primary">Set sail ⛵</button>
+      </form>
+      <p id="gate-error" class="error" role="alert"></p>
+    </div>
+  </section>
+
+  <section id="hud" hidden>
+    <div id="stones" title="Pounamu found"></div>
+    <div id="compass">
+      <div id="compass-arrow">➤</div>
+      <div id="compass-text"></div>
+    </div>
+    <div id="top-buttons">
+      <button id="btn-reo" class="icon-btn" title="Te reo Māori (unlocks later)" disabled>🔒 Reo</button>
+      <button id="btn-journal" class="icon-btn" title="Journal (J)">📖 <span data-i18n="journal">Journal</span></button>
+      <button id="btn-help" class="icon-btn" title="Controls (H)">?</button>
+    </div>
+    <div id="area-banner"></div>
+    <div id="prompt"></div>
+    <div id="toasts"></div>
+    <canvas id="minimap" width="300" height="300"></canvas>
+    <div id="joystick"><div id="joystick-knob"></div></div>
+    <button id="btn-act" class="touch-only" hidden data-i18n="talk">Talk</button>
+  </section>
+
+  <section id="dialogue" hidden>
+    <div class="dlg-name" id="dlg-name"></div>
+    <div class="dlg-text" id="dlg-text"></div>
+    <div class="dlg-hint"><span data-i18n="continue">Continue</span> ▸ <kbd>E</kbd> / tap</div>
+  </section>
+
+  <section id="journal" class="screen modal" hidden>
+    <div class="card journal-card">
+      <header>
+        <h2>📖 <span data-i18n="journal">Journal</span></h2>
+        <button class="icon-btn close" data-close="journal" aria-label="Close">✕</button>
+      </header>
+      <nav class="tabs">
+        <button data-tab="sheet" class="active">Character</button>
+        <button data-tab="quests" data-i18n="quests">Quests</button>
+        <button data-tab="skills" data-i18n="skills">Skills</button>
+      </nav>
+      <div class="tab-body" id="journal-body"></div>
+    </div>
+  </section>
+
+  <section id="help" class="screen modal" hidden>
+    <div class="card help-card">
+      <header>
+        <h2>How to play</h2>
+        <button class="icon-btn close" data-close="help" aria-label="Close">✕</button>
+      </header>
+      <ul class="controls">
+        <li><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> Walk &nbsp;·&nbsp; <kbd>Shift</kbd> Run</li>
+        <li><kbd>E</kbd> / <kbd>Space</kbd> Talk &amp; interact</li>
+        <li>Camera follows you automatically · <kbd>Z</kbd> <kbd>X</kbd> Rotate · <kbd>C</kbd> Recentre · <kbd>+</kbd> <kbd>−</kbd> Zoom</li>
+        <li>Or drag with the mouse · two-finger swipe on a trackpad</li>
+        <li><kbd>J</kbd> Journal &nbsp;·&nbsp; <kbd>H</kbd> Help</li>
+        <li class="touch-note">📱 On touch screens: joystick bottom-left, drag to look, tap the button to talk.</li>
+      </ul>
+      <p class="muted">Find the 5 green pounamu stones by talking to the islanders. Follow the compass!</p>
+      <button class="btn primary" data-close="help">Let's go!</button>
+    </div>
+  </section>
+
+  <section id="ending" class="screen modal" hidden>
+    <div class="card ending-card" id="ending-body"></div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
