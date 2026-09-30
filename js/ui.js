@@ -205,7 +205,6 @@ export class UI {
           <div><h3>${esc(p.name)}</h3><div class="muted"><b>${esc(p.title)}</b></div></div>
         </div>
         <div class="stat-row">
-          <div class="stat"><span>Level</span>${p.level} · ${esc(p.experience)}</div>
           <div class="stat"><span>Pounamu</span>${state.collected.size} / ${MAIN.length}</div>
           <div class="stat"><span>Side trips</span>${state.discovered.size} / ${SIDE.length}</div>
           <div class="stat"><span>${esc(this.t('skills'))}</span>${state.skills.length}</div>

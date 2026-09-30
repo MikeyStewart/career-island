@@ -6,7 +6,7 @@ import {
 } from './builders.js';
 
 export const MAIN = ['campus', 'market', 'tower', 'highway', 'summit'];
-export const SIDE = ['library', 'hall', 'beach'];
+export const SIDE = ['library', 'hall', 'shed', 'beach'];
 
 // Place names are generic on purpose: anything identifying comes from the encrypted content.
 export const PLACES = {
@@ -18,6 +18,7 @@ export const PLACES = {
   summit: { en: 'The Summit', mi: 'Te Tihi' },
   library: { en: 'Tool Library', mi: 'Whare Pukapuka' },
   hall: { en: 'Community Hall', mi: 'Whare Hapori' },
+  shed: { en: 'Maker Shed', mi: 'Whare Mahi' },
   beach: { en: 'The Beach', mi: 'Tātahi' },
   lighthouse: { en: 'Lighthouse', mi: 'Whare Rama' },
 };
@@ -25,7 +26,8 @@ export const PLACES = {
 const OBJECT_NAMES = {
   gradcap: 'Graduation cap', robot: 'OCR robot', blocks: 'Compose blocks', ramp: 'Accessibility ramp',
   catalog: 'Component catalog', houses: 'Two houses', monitor: 'Dashboard', campervan: 'Campervan',
-  led: 'LED art', frisbee: 'Frisbee', basket: 'Disc golf basket', pooltable: 'Pool table', track: 'Hiking track',
+  led: 'LED art', frisbee: 'Frisbee', basket: 'Disc golf basket', decks: 'DJ decks', track: 'Hiking track',
+  trafficlight: 'Traffic light', ascii: 'ASCII video filter', festival: 'Festival app',
 };
 
 const NPC_LOOKS = {
@@ -37,6 +39,7 @@ const NPC_LOOKS = {
   summit: { shirt: '#5b6c8f', hat: 'captain', hair: '#3a2a22' },
   library: { shirt: '#c49a6c', prop: 'book', hair: '#1f1b22', skin: '#e0ac86' },
   hall: { shirt: '#ef7a6a', prop: 'clipboard', hair: '#a0522d' },
+  shed: { shirt: '#c0504d', hat: 'cap', hatColor: '#2d3142', prop: 'clipboard', hair: '#2d2a32', skin: '#d9a07a' },
   beach: { shirt: '#3fa7d6', hat: 'bucket', hatColor: '#ffd24a', prop: 'surfboard', skin: '#b87a55' },
   lighthouse: { shirt: '#2f7fb5', hat: 'bucket', hatColor: '#ffb454', prop: 'lantern', hair: '#eeeeee' },
 };
@@ -61,6 +64,7 @@ function resolveLayout() {
     highway: faceCentre({ x: 8, z: -32, fx: 19, fz: 8, r: 14 }),
     summit: faceCentre({ x: -36, z: -28, fx: 9, fz: 8, r: 12 }),
     library: faceCentre({ x: -55, z: 5, fx: 8, fz: 7, r: 10 }),
+    shed: faceCentre({ x: -27, z: -6, fx: 9, fz: 8, r: 10 }),
     lighthouse: faceCentre({ ...polar(-Math.PI / 2, 12), fx: 7, fz: 7, r: 9 }),
   };
   setFlatten(Object.values(L));
@@ -68,7 +72,7 @@ function resolveLayout() {
   const edges = [
     ['wharf', 'campus'], ['wharf', 'market'], ['campus', 'hall'], ['market', 'hall'], ['market', 'beach'],
     ['beach', 'tower'], ['market', 'tower'], ['tower', 'highway'], ['hall', 'highway'], ['highway', 'summit'],
-    ['summit', 'library'], ['library', 'campus'], ['highway', 'lighthouse'],
+    ['summit', 'library'], ['library', 'campus'], ['highway', 'lighthouse'], ['hall', 'shed'], ['shed', 'summit'],
   ];
   setPaths(edges.map(([a, b]) => [L[a], L[b]]));
   setSand([{ x: L.beach.x, z: L.beach.z, r: 17 }, { x: L.wharf.x, z: L.wharf.z, r: 8 }]);
@@ -341,7 +345,7 @@ function dashboardTexture() {
   const line = (color, pts) => { c.strokeStyle = color; c.lineWidth = 6; c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke(); };
   line('#7fe0a8', [[24, 250], [100, 230], [170, 236], [240, 190], [310, 170], [380, 140], [488, 110]]);
   line('#ffd24a', [[24, 200], [120, 210], [200, 180], [290, 200], [380, 185], [488, 190]]);
-  c.fillStyle = '#7fe0a8'; c.font = '700 26px Nunito, sans-serif'; c.fillText('Crashes  ✓', 24, 305); c.fillText('Analytics  ✓', 190, 305); c.fillText('SLOs  ✓', 380, 305);
+  c.fillStyle = '#7fe0a8'; c.font = '700 26px Nunito, sans-serif'; c.fillText('SLOs  ✓', 24, 305); c.fillText('Crashes  ✓', 160, 305); c.fillText('Feedback  ✓', 330, 305);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; return tex;
 }
 
@@ -430,7 +434,7 @@ function buildHall(site, cv) {
   site.npcAt = [-3.6, -1, 0.3];
 }
 
-function buildBeach(site, rnd) {
+function buildBeach(site) {
   const { a } = site;
   // campervan
   const V = T(-6.5, 0, 1.5, { ry: 0.3 });
@@ -445,20 +449,6 @@ function buildBeach(site, rnd) {
   v(G.box, '#ffb454', T(-0.5, 3.25, 0, { sx: 3, sy: 0.4, sz: 0.7 }));
   site.box(-6.5, 1.5, 3.9, 1.4, 0.3);
   site.object('campervan', -6.5, 1.5, 3.6);
-
-  // LED art pieces
-  const leds = [];
-  const ledGeos = [new THREE.TorusGeometry(0.7, 0.13, 8, 24), new THREE.OctahedronGeometry(0.7), new THREE.TorusKnotGeometry(0.45, 0.12, 48, 8)];
-  ledGeos.forEach((geo, i) => {
-    const x = -10 + i * 1.9, z = 5.2 - i * 0.3;
-    a(G.cyl6, '#2d3142', T(x, 0.6, z, { sx: 0.1, sy: 1.2, sz: 0.1 }));
-    a(G.cyl6, '#2d3142', T(x, 0.05, z, { sx: 0.6, sy: 0.1, sz: 0.6 }));
-    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#ff5d8f' }));
-    site.put(m, x, 1.9, z); leds.push(m);
-    site.circle(x, z, 0.5);
-  });
-  site.updaters.push((t) => leds.forEach((m, i) => { m.material.color.setHSL((t * 0.15 + i * 0.3) % 1, 0.85, 0.62); m.rotation.y = t * (0.6 + i * 0.2); }));
-  site.object('led', -8.1, 5, 2.6);
 
   // frisbee field
   for (const x of [2.5, 13]) for (const z of [3, 7]) a(G.cone, '#ff8a3d', T(x, 0.3, z, { sx: 0.45, sy: 0.6, sz: 0.45 }));
@@ -482,15 +472,24 @@ function buildBeach(site, rnd) {
   site.circle(10.5, -2, 0.7);
   site.object('basket', 10.5, -2);
 
-  // pool table
-  a(G.box, '#7a4f2e', T(3.2, 1.0, -3, { sx: 3.1, sy: 0.3, sz: 1.8 }));
-  a(G.box, '#2e8b57', T(3.2, 1.08, -3, { sx: 2.7, sy: 0.3, sz: 1.4 }));
-  for (const x of [-1.3, 1.3]) for (const z of [-0.7, 0.7]) a(G.box, '#7a4f2e', T(3.2 + x, 0.45, -3 + z, { sx: 0.22, sy: 0.9, sz: 0.22 }));
-  ['#fffaf2', '#ffd24a', '#e2463f', '#2f6db5', '#2d3142', '#ff8a3d'].forEach((c, i) => {
-    a(G.sphere, c, T(2.4 + (i % 3) * 0.5 + rnd() * 0.2, 1.33, -3.3 + Math.floor(i / 3) * 0.5, { s: 0.2 }), { shadow: false });
+  // DJ decks
+  a(G.box, '#2d3142', T(3.2, 0.5, -3, { sx: 3, sy: 1, sz: 1.3 }));
+  a(G.box, '#3a3a48', T(3.2, 1.06, -3, { sx: 3.1, sy: 0.12, sz: 1.35 }));
+  a(G.box, '#9aa0a8', T(3.2, 1.16, -3, { sx: 0.6, sy: 0.1, sz: 0.9 }));
+  for (const x of [0.9, 5.5]) {
+    a(G.box, '#2d3142', T(x, 0.9, -3.3, { sx: 0.9, sy: 1.8, sz: 0.8 }));
+    for (const y of [0.55, 1.35]) a(G.cyl, '#9aa0a8', T(x, y, -2.88, { rx: Math.PI / 2, sx: y < 1 ? 0.6 : 0.4, sy: 0.05, sz: y < 1 ? 0.6 : 0.4 }), { shadow: false });
+  }
+  const platters = [2.2, 4.2].map((x) => {
+    const g = new THREE.Group();
+    const vinyl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 20), mat('#1d1d24')); g.add(vinyl);
+    const label = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 12), mat(x < 3 ? '#ff5d8f' : '#7cc6de')); g.add(label);
+    const mark = new THREE.Mesh(G.box, mat('#fffaf2')); mark.scale.set(0.05, 0.055, 0.3); mark.position.z = 0.2; g.add(mark);
+    return site.put(g, x, 1.15, -3);
   });
-  site.box(3.2, -3, 1.6, 1);
-  site.object('pooltable', 3.2, -3);
+  site.updaters.push((t) => platters.forEach((p, i) => { p.rotation.y = t * (3.5 + i * 0.3); }));
+  site.box(3.2, -3, 2.9, 0.8);
+  site.object('decks', 3.2, -3);
 
   // hiking track signpost
   site.put(signboard('Hiking track →', { w: 2.8, h: 0.8, bg: '#8a6a4a', fg: '#fffaf2', font: 70, lift: 1.3, postColor: '#6b4f36' }), -12.5, 0, 8, 0.5);
@@ -504,6 +503,116 @@ function buildBeach(site, rnd) {
   site.circle(-1.2, -4.5, 0.3);
 
   site.npcAt = [0.8, -1.8, 0.4];
+}
+
+function asciiScreen() {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160;
+  const c = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const ramp = ' .:-=+*#%@';
+  let last = -1;
+  const draw = (t) => {
+    const f = Math.floor(t * 8);
+    if (f === last) return;
+    last = f;
+    c.fillStyle = '#10141c'; c.fillRect(0, 0, 256, 160);
+    c.fillStyle = '#7fe0a8'; c.font = '700 12px monospace';
+    for (let row = 0; row < 12; row++) {
+      let line = '';
+      for (let col = 0; col < 32; col++) {
+        const dx = col / 32 - 0.5, dy = (row / 12 - 0.5) * 0.7;
+        const v = (Math.sin(Math.hypot(dx, dy) * 18 - t * 4) + 1) / 2;
+        line += ramp[Math.min(ramp.length - 1, Math.floor(v * ramp.length))];
+      }
+      c.fillText(line, 8, 16 + row * 12);
+    }
+    tex.needsUpdate = true;
+  };
+  return { tex, draw };
+}
+
+function festivalTexture(title) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 340;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#2d3142'; c.fillRect(0, 0, 512, 340);
+  c.fillStyle = '#ffb454'; c.font = '700 40px Fredoka, sans-serif'; c.fillText(title, 24, 54);
+  // a little festival map: camps around a central art piece
+  c.fillStyle = '#f3dfb2'; c.beginPath(); c.roundRect(24, 76, 300, 240, 16); c.fill();
+  c.strokeStyle = '#c49a6c'; c.lineWidth = 6;
+  for (const r of [45, 90]) { c.beginPath(); c.arc(174, 196, r, 0, Math.PI * 2); c.stroke(); }
+  c.fillStyle = '#ef7a6a'; c.beginPath(); c.arc(174, 196, 14, 0, Math.PI * 2); c.fill();
+  ['#7cc6de', '#a6d98f', '#c3a6f0', '#ffd24a', '#7cc6de', '#a6d98f'].forEach((col, i) => {
+    const a = (i / 6) * Math.PI * 2;
+    c.fillStyle = col; c.fillRect(174 + Math.cos(a) * 68 - 10, 196 + Math.sin(a) * 68 - 10, 20, 20);
+  });
+  // phone
+  c.fillStyle = '#fffaf2'; c.beginPath(); c.roundRect(350, 80, 136, 236, 20); c.fill();
+  c.fillStyle = '#ffb454'; c.fillRect(362, 104, 112, 36);
+  c.fillStyle = '#d9d2c3'; for (let i = 0; i < 4; i++) c.fillRect(362, 152 + i * 38, 112, 26);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; return tex;
+}
+
+function buildShed(site, cv) {
+  const { a } = site;
+  // open-fronted workshop
+  a(G.box, '#d8c3a0', T(0, 0.12, -4, { sx: 9, sy: 0.24, sz: 5 }));
+  a(G.box, '#c49a6c', T(0, 2, -6.4, { sx: 9, sy: 4, sz: 0.25 }));
+  for (const x of [-4.4, 4.4]) a(G.box, '#c49a6c', T(x, 2, -4, { sx: 0.25, sy: 4, sz: 5 }));
+  a(G.prism, '#6fae5a', T(0, 4, -4, { sx: 9.8, sy: 1.8, sz: 5.8 }));
+  a(G.box, '#a07852', T(0, 1, -5.6, { sx: 7, sy: 0.15, sz: 1.2 }));
+  for (const x of [-3.3, 3.3]) a(G.box, '#8a6a4a', T(x, 0.5, -5.6, { sx: 0.15, sy: 1, sz: 1 }));
+  a(G.box, '#9aa0a8', T(0, 2.7, -6.2, { sx: 5, sy: 1.6, sz: 0.08 }));
+  for (let i = 0; i < 6; i++) a(G.box, ['#ef7a6a', '#ffd24a', '#7cc6de'][i % 3], T(-2 + i * 0.8, 2.8, -6.1, { sx: 0.12, sy: 0.9, sz: 0.1, rz: 0.2 }));
+  site.box(0, -6.3, 4.6, 0.4); site.box(-4.4, -4, 0.3, 2.6); site.box(4.4, -4, 0.3, 2.6); site.box(0, -5.6, 3.6, 0.7);
+
+  // ASCII video filter on a monitor
+  const screen = asciiScreen();
+  const mon = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.15, 0.12), [mat('#2d3142'), mat('#2d3142'), mat('#2d3142'), mat('#2d3142'), new THREE.MeshBasicMaterial({ map: screen.tex }), mat('#2d3142')]);
+  mon.position.set(-1.6, 1.75, -5.7); site.dyn.add(mon);
+  a(G.box, '#2d3142', T(-1.6, 1.12, -5.7, { sx: 0.2, sy: 0.3, sz: 0.2 }));
+  site.updaters.push((t) => screen.draw(t));
+  site.object('ascii', -1.6, -4.3, 2.4);
+
+  // festival app board
+  const board = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.1, 0.15), [mat('#8a6a4a'), mat('#8a6a4a'), mat('#8a6a4a'), mat('#8a6a4a'), new THREE.MeshBasicMaterial({ map: festivalTexture(cv.sites.shed.board) }), mat('#8a6a4a')]);
+  board.position.set(6.2, 2, 1.2); board.rotation.y = -0.5; site.dyn.add(board);
+  a(G.box, '#8a6a4a', T(6.2, 0.5, 1.2, { sx: 0.2, sy: 1, sz: 0.2 }));
+  site.box(6.2, 1.2, 1.7, 0.4, -0.5);
+  site.object('festival', 6.2, 1.2);
+
+  // traffic light driven by a microcontroller
+  a(G.cyl6, '#9aa0a8', T(3.4, 1.4, -1.8, { sx: 0.16, sy: 2.8, sz: 0.16 }));
+  a(G.box, '#2d3142', T(3.4, 3.2, -1.8, { sx: 0.7, sy: 1.8, sz: 0.55 }));
+  const lamps = ['#ef4a4a', '#ffb454', '#5fd497'].map((col, i) => {
+    const m = new THREE.Mesh(G.sphere, new THREE.MeshBasicMaterial({ color: col }));
+    m.scale.setScalar(0.42); m.position.set(3.4, 3.75 - i * 0.55, -1.52); site.dyn.add(m);
+    return { m, on: new THREE.Color(col), off: new THREE.Color(col).multiplyScalar(0.25) };
+  });
+  site.updaters.push((t) => {
+    const phase = Math.floor(t / 1.5) % 3;
+    const lit = [2, 1, 0][phase];
+    lamps.forEach((l, i) => l.m.material.color.copy(i === lit ? l.on : l.off));
+  });
+  site.circle(3.4, -1.8, 0.5);
+  site.object('trafficlight', 3.4, -1.8);
+
+  // LED art pieces
+  const leds = [];
+  const ledGeos = [new THREE.TorusGeometry(0.7, 0.13, 8, 24), new THREE.OctahedronGeometry(0.7), new THREE.TorusKnotGeometry(0.45, 0.12, 48, 8)];
+  ledGeos.forEach((geo, i) => {
+    const x = -6.8 + i * 1.9, z = 1.6 + i * 0.3;
+    a(G.cyl6, '#2d3142', T(x, 0.6, z, { sx: 0.1, sy: 1.2, sz: 0.1 }));
+    a(G.cyl6, '#2d3142', T(x, 0.05, z, { sx: 0.6, sy: 0.1, sz: 0.6 }));
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#ff5d8f' }));
+    site.put(m, x, 1.9, z); leds.push(m);
+    site.circle(x, z, 0.5);
+  });
+  site.updaters.push((t) => leds.forEach((m, i) => { m.material.color.setHSL((t * 0.15 + i * 0.3) % 1, 0.85, 0.62); m.rotation.y = t * (0.6 + i * 0.2); }));
+  site.object('led', -4.9, 1.9, 2.6);
+
+  site.put(signboard('Maker Shed', { w: 3, h: 0.9, bg: '#6fae5a', fg: '#ffffff', font: 90 }), -3.6, 0, 5, 0.2);
+  site.circle(-3.6, 5, 1.2);
+  site.npcAt = [0.8, -1.6, 0];
 }
 
 function buildLighthouse(site) {
@@ -616,7 +725,7 @@ export function buildWorld(scene, cv) {
   const builders = {
     wharf: (s) => buildWharf(s), campus: (s) => buildCampus(s, cv), market: (s) => buildMarket(s, cv, rnd),
     tower: (s) => buildTower(s, cv), highway: (s) => buildHighway(s, cv), summit: (s) => buildSummit(s, cv),
-    library: (s) => buildLibrary(s, rnd), hall: (s) => buildHall(s, cv), beach: (s) => buildBeach(s, rnd),
+    library: (s) => buildLibrary(s, rnd), hall: (s) => buildHall(s, cv), beach: (s) => buildBeach(s), shed: (s) => buildShed(s, cv),
     lighthouse: (s) => buildLighthouse(s),
   };
   for (const [id, s] of Object.entries(layout)) {
